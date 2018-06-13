@@ -41,7 +41,7 @@ data SimulationState = SimulationState {idleState :: IdleState, handleraState ::
 -- suspend itself
 
 -- Handler
--- 1. add the received packet was from work
+-- 1. add the received packet, if it was from work
 
 -- Schedule is the main loop
 -- while there is tcb linked run next tcb
