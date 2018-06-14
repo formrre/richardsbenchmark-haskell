@@ -4,7 +4,8 @@ import Data.Word
 import Data.Dynamic
 import Control.Monad.Cont
 import Control.Monad.State.Lazy 
-import Data.Map
+import Data.Map hiding(take)
+import Data.Bits
 
 {- 
     Implementation plan:
@@ -16,7 +17,7 @@ import Data.Map
     list of current packets from back to front
  -}
 
-
+{-
 data IdPktStore = IdPktStore {_firstpkt :: Packet, _storemap :: (Map Int Packet), _storelist :: [Packet], _lastpkt :: Packet}
 
 insert :: IdPktStore -> Packet -> IdPktStore
@@ -55,7 +56,7 @@ data HandlerState = HandlerState {buffer :: [Int]}
 data SimulationState = SimulationState {tcb :: TCB, idleState :: IdleState, handleraState :: HandlerState, handlerbState :: HandlerState,v1 :: RegisterValue,v2 :: RegisterValue, scheduler :: Scheduler}
 
 data Scheduler = Scheduler {queueCount :: Word, holdCount :: Word, blocks :: [Maybe TCB], list :: [TCB], currentTCB :: Maybe TCB, currentId :: Int}
-
+-}
 dataSize = 4
 idIdle = 0
 idWorker = 1
@@ -129,6 +130,7 @@ handlerCommon hn simstate@(SimulationState _tcb _idle _handlerA _handlerB _v1 _v
 schedule :: SimulationState -> SimulationState
 schedule simstate = if length (list simstate) /= 0 then scheduleLoop simstate{currentTCB=(uncons (list simstate))>>=fst} else simstate
 -}
+{-
 scheduleLoop :: SimulationState -> SimulationState
 scheduleLoop simState = case currentTCB simState of
     Nothing -> simState
@@ -143,4 +145,79 @@ scheduleLoop simState = case currentTCB simState of
 -- high-level description of the algorithm-- use a collection and store packets in a tree, sorted by id
 -- traverse the tree to find the next priority
 -- to delete a packet delete the id
+
+-- marks current tcb as held
+holdCurrent :: SimulationState -> (SimulationState,Maybe TCB)
+holdCurrent simState = (simRes,tlinkRes)
+    where
+        simRes = _
+        tlinkRes = currentTcb (scheduler simState)
+
+-- mark block not held
+-- return currentTcb
+release :: SimulationState -> Int -> (SimulationState,Maybe TCB)
+release simState id =
+-}
+-- queue
+-- add the packet to end of work queue and
+{-
+type ResultSim a = (SimulationState,a)
+
+queue :: SimulationState -> Packet -> ResultSim (Maybe ())
+queue simState pkt = si 
+    where
+        
+        newQueueCount = (queueCount simState) + 1 
+-}
+{-
+type DevNum = Int
+workerTask :: MachineState -> Maybe Packet -> MachineState
+workerTask (MachineState _idleState workerState workQueue) Nothing = MachineState 
+-}
+data TaskState = TaskState 
+data IdleState = IdleState {_count :: Int, i_v1 :: Int}
+data WorkerState = WorkerState {w_v1 :: Int,w_v2 :: Int}
+data DeviceState = DeviceState {d_v1 :: Maybe Packet}
+data Packet = Packet {pid :: Int, a1 :: Int, a2 :: [Int]}
+data WorkQueue = WorkQueue [Packet]
+data MachineState =  MachineState IdleState WorkerState WorkerState DeviceState WorkQueue
+
+idleTask :: MachineState -> Maybe Packet -> MachineState
+idleTask (MachineState (IdleState count v1) w1 w2 dev workQueue) _ = if count == 0 then _ else MachineState (IdleState (count-1) newV1)
+    where
+        newV1 = if v1 .&. 0 == 0 then v1 `shiftL` 1 else (v1 `shiftL` 1) `xor` 0xD008
+
+deviceTask :: MachineState -> Maybe Packet -> MachineState
+deviceTask (MachineState idle w1 w2 (DeviceState dev) workQueue) Nothing = 
+    case d_v1 dev of
+        Nothing -> _ -- suspend current
+        Just v -> MachineState idle w1 w2 (DeviceState Nothing) (enqueue workQueue v)
+deviceTask (MachineState idle w1 w2 dev workQueue) pkt@(Just _) = MachineState idle w1 w2 (DeviceState pkt) dev workQueue -- add holdcurrent
+
+enqueue :: WorkQueue -> Packet -> WorkQueue
+enqueue = undefined
+
+id_idle = 0
+id_worker = 1
+id_handler_a = 2
+id_handler_b = 3
+id_device_a = 4
+id_device_b = 5
+
+workerTask :: Int -> MachineState -> Packet -> MachineState
+workerTask mach Nothing _ = _ -- suspend current
+workerTask mach m@(MachineState idle w1 w2 dev workQueue) pkt@(Just _)
+    | mach == 0 = MachineState idle newWState w2 dev (enqueue workQueue newpkt)
+    | mach == 1 = MachineState idle w1 newWState dev (enqueue workQueue newpkt)
+    where
+        wT = if mach == 0 then w1 else w2
+        new_v1 = if w_v1 wT == id_handler_a then id_handler_b else id_handler_a
+        {-  new_a2 is first DATA_SIZE elements of this list, [(v2+1)..26,1..26,1..26,..] -}
+        {- new_v2 is just last element of new_a2 -}
+        new_v2 = last new_a2
+        new_a2 = take dataSize cutList
+        cutList = [((w_v2 wT)+1)..26] ++ infList
+        infList = concat $ repeat [1..26]
+        newpkt = Packet new_v1 0 new_a2 
+        newWState = WorkerState new_v1 new_v2
 
