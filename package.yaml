@@ -1,0 +1,12 @@
+name: richards-benchmark
+version: 0.0.1
+synopsis: Haskell implmentation of the Richard's benchmark
+
+dependencies:
+  - base >= 4.7 && < 5
+  - array >= 0.5.2.0 && < 0.6
+  - mtl >= 2.2.2
+  - containers >= 0.5.10
+executable:
+  main: richards.hs
+

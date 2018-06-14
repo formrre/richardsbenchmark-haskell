@@ -1,0 +1,22 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 35c230fae880a9f9873cac8c560df4bcbb6df40e1402ce0d56177dfe7980aa87
+
+name:           richards-benchmark
+version:        0.0.1
+synopsis:       Haskell implmentation of the Richard's benchmark
+build-type:     Simple
+cabal-version:  >= 1.10
+
+executable richards-benchmark
+  main-is: richards.hs
+  other-modules:
+      Paths_richards_benchmark
+  build-depends:
+      array >=0.5.2.0 && <0.6
+    , base >=4.7 && <5
+    , containers >=0.5.10
+    , mtl >=2.2.2
+  default-language: Haskell2010
