@@ -180,22 +180,24 @@ data WorkerState = WorkerState {w_v1 :: Int,w_v2 :: Int}
 data DeviceState = DeviceState {d_v1 :: Maybe Packet}
 data Packet = Packet {pid :: Int, a1 :: Int, a2 :: [Int]}
 data WorkQueue = WorkQueue [Packet]
-data MachineState =  MachineState IdleState WorkerState WorkerState DeviceState WorkQueue
+data MachineState = MachineState IdleState WorkerState WorkerState DeviceState WorkQueue SchedulerState
+data SchedulerState = SchedulerState {currentTcb :: Tcb,queueCount :: Int, blocks :: Array}
+data Tcb = Tcb (Maybe Tcb) Int Int WorkQueue
 
 idleTask :: MachineState -> Maybe Packet -> MachineState
-idleTask (MachineState (IdleState count v1) w1 w2 dev workQueue) _ = if count == 0 then _ else MachineState (IdleState (count-1) newV1)
+idleTask (MachineState (IdleState count v1) w1 w2 dev workQueue _) _ = if count == 0 then _ else MachineState (IdleState (count-1) newV1)
     where
         newV1 = if v1 .&. 0 == 0 then v1 `shiftL` 1 else (v1 `shiftL` 1) `xor` 0xD008
 
 deviceTask :: MachineState -> Maybe Packet -> MachineState
-deviceTask (MachineState idle w1 w2 (DeviceState dev) workQueue) Nothing = 
+deviceTask (MachineState idle w1 w2 (DeviceState dev) workQueue _) Nothing = 
     case d_v1 dev of
         Nothing -> _ -- suspend current
         Just v -> MachineState idle w1 w2 (DeviceState Nothing) (enqueue workQueue v)
 deviceTask (MachineState idle w1 w2 dev workQueue) pkt@(Just _) = MachineState idle w1 w2 (DeviceState pkt) dev workQueue -- add holdcurrent
 
-enqueue :: WorkQueue -> Packet -> WorkQueue
-enqueue = undefined
+enqueue :: MachineState -> Packet -> MachineState
+enqueue = _
 
 id_idle = 0
 id_worker = 1
@@ -206,7 +208,7 @@ id_device_b = 5
 
 workerTask :: Int -> MachineState -> Packet -> MachineState
 workerTask mach Nothing _ = _ -- suspend current
-workerTask mach m@(MachineState idle w1 w2 dev workQueue) pkt@(Just _)
+workerTask mach m@(MachineState idle w1 w2 dev workQueue _) pkt@(Just _)
     | mach == 0 = MachineState idle newWState w2 dev (enqueue workQueue newpkt)
     | mach == 1 = MachineState idle w1 newWState dev (enqueue workQueue newpkt)
     where
@@ -220,4 +222,12 @@ workerTask mach m@(MachineState idle w1 w2 dev workQueue) pkt@(Just _)
         infList = concat $ repeat [1..26]
         newpkt = Packet new_v1 0 new_a2 
         newWState = WorkerState new_v1 new_v2
+
+-- callGraph
+-- schedule -> run : tcb
+-- run : tcb -> run : task
+-- run : task :- run : specifictask
+-- specifictask = idletask,devicetask,workertask,handlertask
+-- devicetask -> suspendcurrent
+-- suspendcurrent -> ()
 

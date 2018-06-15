@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 35c230fae880a9f9873cac8c560df4bcbb6df40e1402ce0d56177dfe7980aa87
+-- hash: 4a870aacd84d55ec630a0cf370e37c999662ed715e104833882d2f7b2a1b8926
 
 name:           richards-benchmark
 version:        0.0.1
@@ -11,7 +11,7 @@ build-type:     Simple
 cabal-version:  >= 1.10
 
 executable richards-benchmark
-  main-is: richards.hs
+  main-is: RichardsState.hs
   other-modules:
       Paths_richards_benchmark
   build-depends:

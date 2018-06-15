@@ -8,5 +8,4 @@ dependencies:
   - mtl >= 2.2.2
   - containers >= 0.5.10
 executable:
-  main: richards.hs
-
+  main: RichardsState.hs
